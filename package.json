@@ -1,0 +1,25 @@
+{
+  "name": "alumnus-back-end",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "nodemon src/server.js",
+    "knex-migrate": " knex --knexfile knexfile.ts migrate:latest",
+    "knex-seed": " knex --knexfile knexfile.ts seed:run"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dateformat": "^3.0.3",
+    "express": "^4.17.1",
+    "knex": "^0.21.5-next2",
+    "mysql": "^2.18.1",
+    "sqlite3": "^5.0.0"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.4"
+  }
+}
