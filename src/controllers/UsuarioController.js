@@ -44,7 +44,7 @@ module.exports = {
 
 
                         if (result.insertId != 0) {
-                            return res.json({ mensagem: 'Usuário criado', status: 1 });
+                            return res.json({ mensagem: 'Usuário criado', idUsuario: result.insertId, status: 1 });
                         } else {
                             return res.json({ mensagem: 'Houve um problema para criar o usuário.', status: 2  });
                         }
@@ -63,8 +63,10 @@ module.exports = {
         db.query(sql, [email, senha], (err, result) => {
             if (err) return res.json({ mensagem: 'Houve um erro ao fazer login', sqlError: err, status: 2 });
 
+            console.log(result);
+
             if (result.length > 0) {
-                return res.json({ mensagem: 'Autenticado', status: 1})
+                return res.json({ mensagem: 'Autenticado', idUsuario: result[0].IdUsuario, status: 1})
             } else {
                 return res.json({ mensagem: 'Não há usuários com essas credenciais', status: 2 });
             }
