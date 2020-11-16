@@ -1,149 +1,289 @@
-// const Dev = require('../models/Dev');
-const db = require('./dbconnect.js');
-const dateFormat = require('dateformat');
+const User = require('../models/Usuario');
+const Auth = require('../controllers/AuthController');
+const crypto = require('crypto');
+const { Op } = require('sequelize');
+
 
 module.exports = {
 
-    /// Rota: user/signup
-    signup(req, res) {
-        const { email, senha, confirmaSenha, nickname } = req.body;
+    //Rota: user/signup
+    async signup(req, res) {
+
+        let { email, senha, confirmaSenha, nickname } = req.body;
 
         if (email && senha && confirmaSenha) {
             if (senha.length < 8 || senha.length > 32) {
-                return res.json({ mensagem: 'A senha não atende os padrões para criar um usuário.', status: 2 });}
+                return res.status(400).json({ error: 'A senha deve ter no mínimo 8 e no máximo 32 dígitos', status: 2 });
+            }
 
             if (senha != confirmaSenha) {
-                return res.json({ mensagem: 'As senhas digitadas não coincidem', status: 2 })}
+                return res.status(400).json({ error: 'As senhas digitadas não coincidem', status: 2 });
+            }
 
-
-            let sql = "SELECT IdUsuario, Email FROM Usuario WHERE Email = ?";
-            db.query(sql, email, (err, result) => {
-                if (err) return res.json({ mensagem: 'Houve um problema para criar o usuário.', sqlError: err, status: 2 });
-
-                if (result.length > 0) {
-                    return res.json({ mensagem: 'Já existe um usuário com esse email', status: 2 });
-                }
-                else {
-                    let hoje = new Date();
-                    dateFormat(hoje, "yyyy-mm-dd hh:MM:ss");
-
-                    let data = {
-                        Email: email,
-                        Senha: senha,
-                        Nickname: nickname,
-                        DescricaoPerfil: "",
-                        Pontuacao: 0,
-                        Avatar: 1,
-                        TipoUsuario: 1,
-                        DataCriacao: hoje 
-                    }; 
-
-                    sql = 'INSERT INTO Usuario SET ?';
-                    db.query(sql, data, (err, result) => {
-                        if (err) return res.json({ mensagem: 'Houve um problema para criar o usuário.', sqlError: err, status: 2 });
-
-
-                        if (result.insertId != 0) {
-                            return res.json({ mensagem: 'Usuário criado', idUsuario: result.insertId, status: 1 });
-                        } else {
-                            return res.json({ mensagem: 'Houve um problema para criar o usuário.', status: 2  });
-                        }
-                    });
+            let response = await User.findOne({
+                where:
+                {
+                    email: email
                 }
             });
-        } else {
-            return res.json({ mensagem: 'Coloque um usuário e senha', status: 2 })
+
+            if (response) {
+                return res.status(400).json({ error: 'Este email já está sendo utilizado', status: 2 });
+            }
+
+            nickname = nickname.trim();
+
+            response = await User.findOne({
+                where:
+                {
+                    nickname: nickname
+                }
+            });
+
+            if (response) {
+                return res.status(400).json({ error: 'Este nickname já está sendo utilizado', status: 2 });
+            }
+
+            const hashSenha = crypto.createHash('sha256').update(senha).digest('hex');
+
+            let data = {
+                email: email,
+                senha: hashSenha,
+                nickname: nickname,
+                descricaoPerfil: "",
+                pontuacao: 0,
+                avatar: 1,
+                tipoUsuario: 1,
+            };
+
+            let user = await User.create(data);
+
+            if (!user) {
+                return res.status(400).json({ status: 2, error: 'Houve um erro ao criar o usuário' });
+            }
+
+            const tokens = await Auth.directLogin(user.id, user.email, senha, user.nickname);
+
+            user.senha = "<Oculto>";
+
+            return res.json({ status: 1, user, tokens });
         }
+
     },
 
-    login(req, res) {
+
+    // {
+    //     "email": "breno.s.nogueira@hotmail.com", 
+    //     "nickname": "RexynyN",
+    //     "senha": "brunogamer02",    
+    //     "confirmaSenha": "brunogamer02"
+    // }
+
+    //Deleta uma atividade
+    async delete(req, res) {
         const { email, senha } = req.body;
 
-        let sql = "SELECT * FROM Usuario WHERE Email = ? AND Senha = ?";
-        db.query(sql, [email, senha], (err, result) => {
-            if (err) return res.json({ mensagem: 'Houve um erro ao fazer login', sqlError: err, status: 2 });
+        if (email !== req.user.email || senha !== req.user.senha) {
+            return res.status(400).json({ status: 2, error: 'Houve um conflito de credenciais, informe o email e senha corretos para deletar o usuário' });
+        }
 
-            console.log(result);
+        let user = await User.findOne({ where: { id: req.user.id } });
 
-            if (result.length > 0) {
-                return res.json({ mensagem: 'Autenticado', idUsuario: result[0].IdUsuario, status: 1})
-            } else {
-                return res.json({ mensagem: 'Não há usuários com essas credenciais', status: 2 });
-            }
+        if (!user) {
+            return res.status(400).json({ status: 2, error: 'Houve um problema ao retornar o usuário, provavelmente já foi deletado', user });
+        }
 
-        });
+        response = await user.update({ loginToken: "" });
+
+        if (!response) {
+            return res.status(400).json({ status: 2, error: 'Não foi possível sair da conta' });
+        }
+
+        const final = user.destroy();
+
+        console.log(final)
+
+        if (!final) {
+            return res.status(400).json({ status: 2, error: 'Houve um problema ao apagar o usuário, provavelmente já foi deletado', request });
+        }
+
+        return res.json({ status: 1 });
     },
 
-    delete(req, res) {
-        const { usuario, email, senha } = req.body;
 
-        let sql = "DELETE FROM Usuario WHERE IdUsuario = ?, Email = ?, Senha = ?";
-        db.query(sql, [usuario, email, senha], (err, result) => {
-            if (err) return res.json({ mensagem: 'Houve um erro ao deletar.', sqlError: err, status: 2});
+    async edit(req, res) {
+        let {
+            nickname,
+            descricaoPerfil,
+            avatar,
+        } = req.body;
 
 
-            if (result.affectedRows != 0) {
-                return res.json({ mensagem: 'Usuário deletado.', status: 1})
-            } else {
-                return res.json({ mensagem: 'O usuário já foi deletado ou não existe.', status: 2 });
+        const user = await User.findOne({
+            where: {
+                id: req.user.id,
             }
         });
-    },
 
-    edit(req, res) {
-        const { email, senha } = req.body;
+        if (!user) {
+            return res.status(400).json({ status: 2, error: 'Usuário não encontrado' });
+        }
 
-        let sql = "SELECT * FROM usuario WHERE Email = ? AND Senha = ?";
-        db.query(sql, [email, senha], (err, result) => {
-            if (err) return res.json({ mensagem: 'Houve um erro ao fazer login', status: 2 });
+        if (nickname && nickname != "" && nickname != " ") {
 
-            if (result.affectedRows != 0) {
-                return res.json({ mensagem: 'Autenticado', status: 2  })
-            } else {
-                return res.json({ mensagem: 'Não há usuários com essas credenciais', status: 2  });
+            nickname = nickname.trim();
+
+            let response = await User.findOne({
+                where: {
+                    nickname: nickname
+                }
+            });
+
+            if (response) {
+                return res.status(400).json({ status: 2, error: 'Este nickname já está sendo usado' });
             }
 
-        });
+            response = await user.update({ nickname: nickname });
+
+            if (!response) {
+                return res.status(400).json({ status: 2, error: 'Houve um erro ao mudar o nickname' });
+            }
+        }
+
+        let change = null;
+
+        if (descricaoPerfil && avatar) {
+            avatar = Number(avatar);
+
+            change = await user.update({ descricaoPerfil, avatar});
+
+            if (!change) {
+                return res.status(400).json({ status: 2, error: 'Houve um erro ao mudar o nickname' });
+            }
+
+        } else if (!descricaoPerfil && avatar) {
+            avatar = Number(avatar);
+
+            change = await user.update({ avatar});
+
+            if (!change) {
+                return res.status(400).json({ status: 2, error: 'Houve um erro ao mudar o nickname' });
+            }
+
+        } else if (descricaoPerfil && !avatar) {
+            change = await user.update({ descricaoPerfil });
+
+            if (!change) {
+                return res.status(400).json({ status: 2, error: 'Houve um erro ao mudar o nickname' });
+            }
+        } 
+
+
+        return res.json({ status: 1, user });
     },
 
-    show(req, res) {
-        const UserId = req.params.id;
+    async editPassword(req, res) {
+        const { senha, confirmaSenha, novaSenha, confirmaNovaSenha } = req.body;
 
-        let sql = "SELECT * FROM Usuario WHERE IdUsuario = ?";
-        db.query(sql, [UserId], (err, result) => {
-            if (err) return res.json({ mensagem: 'Houve um erro ao buscar o usuário', sqlError: err, status: 2 });
+        if (senha != confirmaSenha) {
+            return res.status(400).json({ error: 'As senhas digitadas não coincidem', status: 2 });
+        }
 
-            if (result[0]) {
-                return res.json({ Dados: result[0], status: 1 });
-            } else {
-                return res.json({ mensagem: 'Usuário não encontrado.', status: 2 });
+        if (novaSenha != confirmaNovaSenha) {
+            return res.status(400).json({ error: 'As novas senhas digitadas não coincidem', status: 2 });
+        }
+
+        if (senha !== req.user.senha) {
+            return res.status(400).json({ status: 2, error: 'Houve um conflito de credenciais, informe a senha correta para mudá-la' });
+        }
+
+        let hashSenha = crypto.createHash('sha256').update(senha).digest('hex');
+
+        const response = await User.findOne({
+            where:
+            {
+                [Op.and]: [{ id: req.user.id }, { senha: hashSenha }]
             }
         });
+
+        if (!response) {
+            return res.status(400).json({ error: 'A senha está incorreta', status: 2 });
+        }
+
+        if (novaSenha.length < 8 || novaSenha.length > 32) {
+            return res.status(400).json({ error: 'A nova senha deve ter no mínimo 8 e no máximo 32 dígitos', status: 2 });
+        }
+
+        hashSenha = crypto.createHash('sha256').update(novaSenha).digest('hex');
+
+        const change = response.update({ senha: hashSenha });
+
+        if (!change) {
+            return res.status(400).json({ error: 'Houve um problema para mudar a senha', status: 2 });
+        }
+
+        const tokens = await Auth.directLogin(response.id, response.email, novaSenha, response.nickname);
+
+        return res.json({ status: 1, tokens });
+
     },
 
-    list(req, res) {
-        const { limite } = req.body;
-        const pagina = req.params.page;
+    async show(req, res) {
+        const id = req.params.id;
 
+        const response = await User.findOne({
+            where: {
+                id: id,
+            }
+        });
+
+        if (!response) {
+            return res.status(400).json({ status: 2, error: 'Usuário não encontrado' });
+        }
+
+        let user = {
+            nickname: response.nickname,
+            descricaoPerfil: response.descricaoPerfil,
+            pontuacao: response.pontuacao,
+            avatar: response.avatar,
+            createdAt: response.createdAt,
+        }
+
+        return res.json({ status: 1, user });
+    },
+
+    async list(req, res) {
+        const limite = req.query.limit;
+        const pagina = req.query.page;
         let offSet;
 
-        if (pagina == 0 || pagina == 1) {
+        if (pagina == 1 || pagina == 0) {
             offSet = 0;
         } else {
             offSet = (pagina - 1) * limite;
         }
 
-        let sql = "SELECT * FROM Usuario LIMIT ? OFFSET ?;";
-        db.query(sql, [limite, offSet], (err, result) => {
-            if (err) return res.json({ mensagem: 'Houve um erro ao buscar os usuários', sqlError: err, status: 2});
-
-            if (result) {
-                return res.json({ dados: result, status: 1 });
-            } else {
-                return res.json({ densagem: 'Usuários não encontrados.', status: 2 });
-            }
+        const response = await User.findAll({
+            offset: offSet,
+            limit: limite
         });
+
+        if (!response) {
+            return res.status(400).json({ status: 2, error: 'Não foi possível achar atividades desse usuário' });
+        }
+
+        let users = [];
+
+        response.forEach(user => {
+            users.push({
+                nickname: user.nickname,
+                descricaoPerfil: user.descricaoPerfil,
+                pontuacao: user.pontuacao,
+                avatar: user.avatar,
+                createdAt: user.createdAt,
+            });
+        });
+
+        return res.json({ status: 1, users });
     }
-
-
 };

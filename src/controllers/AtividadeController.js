@@ -1,116 +1,11 @@
-const db = require('./dbconnect.js');
+const Atv = require('../models/Atividade');
+const User = require('../models/Usuario');
+
 
 module.exports = {
-    create(req, res) {
-        const {
-            usuario,
-            agrupador,
-            titulo,
-            descricao,
-            tempoConclusao,
-            dataAtividade,
-        } = req.body;
-
-
-        let data = {
-            IdUsuario: usuario,
-            TempoCumpridoAtividade: '00:00:00',
-            AgrupadorAtividade: agrupador,
-            DescricaoAtividade: descricao,
-            NumeroDeMetas: 0,
-            Anotacao: '',
-            PontosAtividade: 0,
-            TempoPrevistoAtividade: tempoConclusao,
-            TituloAtividade: titulo,
-            DataAtividade: dataAtividade,
-            SituacaoAtividade: 1
-        };
-
-        let sql = "INSERT INTO Atividade SET ?"
-        db.query(sql, data,
-            (err, result) => {
-                if (err) return res.json({ mensagem: "Houve um erro ao criar a Atividade", sqlError: err, status: 2 });
-
-                console.log(result)
-
-                if (result.insertId != 0) {
-                    return res.json({ mensagem: 'Atividade criada', status: 1 });
-                } else {
-                    return res.json({ mensagem: 'Houve um problema para criar a Atividade.', status: 2 });
-                }
-            });
-
-
-    },
-
-
-    closeActivity(req, res) {
-        const { email, senha } = req.body;
-
-        let sql = "SELECT * FROM usuario WHERE Email = ? AND Senha = ?";
-        db.query(sql, [email, senha], (err, result) => {
-            if (err) return res.json({ mensagem: 'Houve um erro ao fazer login' });
-
-            if (result.length > 0) {
-                return res.json({ mensagem: 'Autenticado' })
-            } else {
-                return res.json({ mensagem: 'Não há usuários com essas credenciais' });
-            }
-
-        });
-    },
-
-    delete(req, res) {
-        const ActivityId  = req.params.id;
-
-        let sql = "DELETE FROM Atividade WHERE IdAtividade = ?";
-        db.query(sql, [ActivityId], (err, result) => {
-            if (err) return res.json({ mensagem: 'Houve um erro ao deletar.', status: 2});
-
-
-            if (result.affectedRows != 0) {
-                return res.json({ mensagem: 'Atividade deletada.', status: 1 })
-            } else {
-                return res.json({ mensagem: 'A Atividade já foi deletada ou não existe.', status: 2  });
-            }
-        });
-    },
-
-    edit(req, res) {
-        const { email, senha } = req.body;
-
-        let sql = "SELECT * FROM Atividade WHERE ";
-        db.query(sql, [email, senha], (err, result) => {
-            if (err) return res.json({ mensagem: 'Houve um erro ao fazer login' });
-
-            if (result.affectedRows != 0) {
-                return res.json({ mensagem: 'Autenticado' })
-            } else {
-                return res.json({ mensagem: 'Não há usuários com essas credenciais' });
-            }
-
-        });
-    },
-
-    show(req, res) {
-        const ActivityId = req.params.id;
-
-        let sql = "SELECT * FROM Atividade WHERE IdAtividade = ?";
-        db.query(sql, [ActivityId], (err, result) => {
-            if (err) return res.json({ mensagem: 'Houve um erro ao buscar a Atividade.', sqlError: err, status: 2 });
-
-            if (result[0]) {
-                return res.json({ dados: result[0], status: 1 });
-            } else {
-                return res.json({ mensagem: 'Atividade não encontrada. Ela pode ter sido deletada ou não existe.', status: 2 });
-            }
-        });
-    },
-
-    list(req, res) {
-        const { usuario, limite } = req.body;
-        const pagina = req.params.page;
-
+    async index(req, res) {
+        const limite = req.query.limit;
+        const pagina = req.query.page;
         let offSet;
 
         if (pagina == 1 || pagina == 0) {
@@ -119,41 +14,225 @@ module.exports = {
             offSet = (pagina - 1) * limite;
         }
 
-        let sql = "SELECT * FROM Atividade WHERE IdUsuario = ? LIMIT ? OFFSET ?;";
-        db.query(sql, [usuario, limite, offSet], (err, result) => {
-            if (err) return res.json({ mensagem: 'Houve um erro ao buscar as Atividades', sqlError: err,  status: 2  });
-
-            if (result) {
-                return res.json({ dados: result, status: 1});
-            } else {
-                return res.json({ mensagem: 'Usuário não encontrado.', status: 2 });
-            }
+        const atv = await Atv.findAll({
+            where:
+            {
+                idUsuario: req.user.id
+            },
+            offset: offSet,
+            limit: limite
         });
+
+        if (!atv) {
+            return res.status(400).json({ status: 2, error: 'Não foi possível achar atividades desse usuário' });
+        }
+
+        return res.json({ status: 1, atv });
     },
 
-    createDatabase(req, res) {
-        // let sql = "create table Atividade (" +
-        //     "IdAtividade int primary key auto_increment not null," +
-        //     "IdUsuario int not null," +
-        //     "TempoCumpridoAtividade time not null," +
-        //     "AgrupadorAtividade varchar(50) not null," +
-        //     "TituloAtividade varchar(100) not null," +
-        //     "DescricaoAtividade varchar(800) not null," +
-        //     "NumeroDeMetas int not null," +
-        //     "Anotacao varchar(800) not null," +
-        //     "PontosAtividade int not null," +
-        //     "TempoPrevistoAtividade time not null," +
-        //     "DataAtividade datetime not null," +
-        //     "SituacaoAtividade tinyint not null," +
-        //     "foreign key (IdUsuario) references Usuario(IdUsuario)" +
-        //     ");";
 
-        // db.query(sql, (err, result) => {
-        //         if (err) return res.json({ mensagem: 'Houve um erro ao buscar as Atividades', sqlError: err,  status: 2  });
-    
-        //         if (result) {
-        //             return res.json({ dados: result, status: 1});
-        //         } 
-        // });
-    }
+    async create(req, res) {
+        const {
+            agrupador,
+            titulo,
+            descricao,
+            tempoConclusao,
+            dataAtividade,
+        } = req.body;
+
+        let today = new Date();
+        let date = new Date(dataAtividade);
+
+        if (date <= today) {
+            return res.status(400).json({ status: 2, error: 'A data da atividade já passou' });
+        }
+
+        if (tempoConclusao === "00:00:00") {
+            return res.status(400).json({ status: 2, error: 'O tempo de conclusão é inválido' });
+        }
+
+        let data = {
+            idUsuario: req.user.id,
+            tempoCumprido: '00:00:00',
+            agrupador: agrupador,
+            descricao: descricao,
+            numeroMetas: 0,
+            anotacao: '',
+            pontos: 0,
+            tempoPrevisto: tempoConclusao,
+            titulo: titulo,
+            dataAtividade: dataAtividade,
+            statusAtividade: 1
+        };
+
+        const atv = await Atv.create(data);
+
+        if (!atv) {
+            return res.status(400).json({ status: 2, error: 'Houve um erro ao criar a atividade' });
+        }
+
+        return res.json({ status: 1, atv });
+    },
+
+    //TODO
+    async closeActivity(req, res) {
+        const ActivityId = req.params.id;
+
+        const response = await Atv.destroy({
+            where: {
+                id: ActivityId,
+                idUsuario: req.user.id
+            }
+        });
+
+        if (response.statusAtividade === 1) {
+            const response = await Atv.update({ loginToken: refreshToken }, { where: { id: user.id } });
+
+        } else {
+            return res.status(400).json({ status: 2, error: 'A atividade já foi encerrada' });
+        }
+    },
+
+    //Deleta uma atividade
+    async delete(req, res) {
+        const ActivityId = req.params.id;
+
+        const response = await Atv.destroy({
+            where: {
+                id: ActivityId,
+                idUsuario: req.user.id
+            }
+        });
+
+        if (!response) {
+            return res.status(400).json({ status: 2, error: 'Atividade não encontrada' });
+        }
+
+        if (response.tempoCumprido !== "00:00:00" || response.status !== 1) {
+            return res.status(400).json({ status: 2, error: 'Atividade não pode ser deletada pois já foi iniciada' });
+        }
+
+        return res.json({ status: 1, response });
+    },
+
+    //TODO
+    //Edita uma atividade
+    async edit(req, res) {
+        const {
+            id,
+            agrupador,
+            titulo,
+            descricao,
+            tempoPrevisto,
+            dataAtividade,
+        } = req.body;
+
+
+        const response = await Atv.findOne({
+            where: {
+                id: id,
+                idUsuario: req.user.id
+            }
+        });
+
+
+        if (!response) {
+            return res.status(400).json({ status: 2, error: 'Atividade não encontrada' });
+        }
+
+        if(response.status != 2){
+            return res.status(400).json({ status: 2, error: 'Atividade já foi terminada' });
+        }
+
+        let data;
+
+        if (response.tempoCumprido != "00:00:00") {
+            data = {
+                id,
+                agrupador,
+                titulo,
+                descricao,
+            }
+
+        } else {
+            data = {
+                id,
+                agrupador,
+                titulo,
+                descricao,
+                tempoPrevisto,
+                dataAtividade,
+            }
+        }
+
+        Atv.update(data, { where: { id: ActivityId } });
+
+        return res.json({ status: 1, response });
+    },
+
+
+    async update(req, res) {
+        const ActivityId = req.params.id;
+
+        const {
+            id,
+            tempoCumprido,
+            numeroMetas,
+            anotacao,
+            pontos,
+        } = req.body;
+
+
+        const response = await Atv.findOne({
+            where: {
+                id: ActivityId,
+                idUsuario: req.user.id
+            }
+        });
+
+
+        if (!response) {
+            return res.status(400).json({ status: 2, error: 'Atividade não encontrada' });
+        }
+
+        if (response.status != 2) {
+            let data = {
+                id,
+                tempoCumprido,
+                numeroMetas,
+                anotacao,
+                pontos,
+            }
+
+            const update = Atv.update(data, { where: { id: ActivityId } });
+
+            if (!update) {
+                return res.status(400).json({ status: 2, error: 'Não foi possível atualizar a atividade' });
+            }    
+
+            return res.json({ status: 1, update});
+
+        } else {
+            return res.status(400).json({ status: 2, error: 'A atividade já foi fechada, não pode ser editada' });
+        }
+    },
+
+    //Mostra uma atividade pelo ID
+    async show(req, res) {
+        const ActivityId = req.params.id;
+
+        const response = await Atv.findOne({
+            where: {
+                id: ActivityId,
+                idUsuario: req.user.id
+            }
+        });
+
+        if (!response) {
+            return res.status(400).json({ status: 2, error: 'Atividade não encontrada' });
+        }
+
+        return res.json({ status: 1, response});
+    },
+
 };

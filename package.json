@@ -12,14 +12,18 @@
   "license": "ISC",
   "dependencies": {
     "cors": "^2.8.5",
-    "dateformat": "^3.0.3",
     "dotenv": "^8.2.0",
     "express": "^4.17.1",
+    "jsonwebtoken": "^8.5.1",
     "mysql": "^2.18.1",
+    "pg": "^8.4.2",
+    "pg-hstore": "^2.3.3",
+    "sequelize": "^6.3.5",
     "serve-favicon": "^2.5.0",
     "sqlite3": "^5.0.0"
   },
   "devDependencies": {
-    "nodemon": "^2.0.4"
+    "nodemon": "^2.0.4",
+    "sequelize-cli": "^6.2.0"
   }
 }
