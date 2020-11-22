@@ -21,7 +21,8 @@ module.exports = {
             email,
             senha,
             nickname: user.nickname,
-            id: user.id
+            id: user.id,
+            tipoUsuario: user.tipoUsuario
         }
 
         const acessToken = jwt.sign(userData, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '24h' });
@@ -33,16 +34,17 @@ module.exports = {
             return res.status(400).json({ status: 2, error: 'Houve um erro ao fazer login' });
         }
 
-        return res.json({ status: 1, accessToken: acessToken, refreshToken: refreshToken });
+        return res.json({ status: 1, tipoUsuario: user.tipoUsuario, accessToken: acessToken, refreshToken: refreshToken });
     },
 
-    async directLogin(id, email, senha, nickname) {
+    async directLogin(id, email, senha, nickname, tipoUsuario) {
 
         let userData = {
             email: email,
             senha: senha,
             nickname: nickname,
-            id: id
+            id: id,
+            tipoUsuario: tipoUsuario
         }
 
         const acessToken = jwt.sign(userData, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '24h' });
@@ -54,11 +56,11 @@ module.exports = {
             return { status: 2, error: 'Houve um erro ao fazer login' };
         }
 
-        return { status: 1, accessToken: acessToken, refreshToken: refreshToken };
+        return { status: 1, tipoUsuario: tipoUsuario, accessToken: acessToken, refreshToken: refreshToken };
     },
 
     async logout(req, res) {
-        const refreshToken = req.body.token;
+        const refreshToken = req.body.refreshToken;
 
         const response = await User.update({ loginToken: "" }, { where: { loginToken: refreshToken } });
 
@@ -68,11 +70,11 @@ module.exports = {
 
         res.json({ status: 1, message: 'O logout foi bem sucedido' });
     },
-
+ 
     async token(req, res) {
         const refreshToken = req.body.token;
 
-        if (refreshToken == null) return res.json({ status: 2, error: 'Nenhum token foi enviado' });
+        if (!refreshToken) return res.json({ status: 2, error: 'Nenhum token foi enviado' });
 
         const user = await User.findOne({ where: { loginToken: refreshToken } });
 
@@ -85,12 +87,13 @@ module.exports = {
                 email: user.email,
                 senha: user.senha,
                 nickname: user.nickname,
-                id: user.id
+                id: user.id,
+                tipoUsuario: user.tipoUsuario
             }
 
             const accessToken = jwt.sign(userData, process.env.ACCESS_TOKEN_SECRET);
 
-            res.json({ status: 1, accessToken: accessToken })
+            res.json({ status: 1, tipoUsuario: user.tipoUsuario, accessToken: accessToken })
         })
     },
 
@@ -98,10 +101,10 @@ module.exports = {
         const authHeader = req.headers['authorization'];
         const token = authHeader && authHeader.split(' ')[1];
 
-        if (token === null) return res.status(401).json({ status: 2, error: 'Nenhum token foi enviado' });
+        if (!token) return res.status(401).json({ status: 3, error: 'Nenhum token foi enviado' });
 
         jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, user) => {
-            if (err) return res.status(403).json({ status: 2, error: 'O token enviado é inválido ou expirou' });
+            if (err) return res.status(403).json({ status: 3, error: 'O token enviado é inválido ou expirou' });
             req.user = user;
             next();
         });

@@ -59,7 +59,7 @@ foreign key (IdPublicacao) references Publicacao(IdPublicacao)
 );
 
 create table DenunciaUsuario (
-IdDDenunciaUsuario int primary key auto_increment not null,
+IdDenunciaUsuario int primary key auto_increment not null,
 IdUsuario int not null,
 foreign key (IdUsuario) references Usuario(IdUsuario)
 );
