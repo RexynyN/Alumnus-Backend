@@ -15,19 +15,19 @@ module.exports = {
         if (email && senha && confirmaSenha && nickname) {
 
             if (email.length > 255) {
-                return res.status(400).json({ error: 'O email é grande demais', status: 2 });
+                return res.json({ error: 'O email é grande demais', status: 2 });
             }
 
             if (nickname.length > 50) {
-                return res.status(400).json({ status: 2, error: "O nickname é grande demais" });
+                return res.json({ status: 2, error: "O nickname é grande demais" });
             }
 
             if (senha.length < 8 || senha.length > 20) {
-                return res.status(400).json({ error: 'A senha deve ter no mínimo 8 e no máximo 20 dígitos', status: 2 });
+                return res.json({ error: 'A senha deve ter no mínimo 8 e no máximo 20 dígitos', status: 2 });
             }
 
             if (senha != confirmaSenha) {
-                return res.status(400).json({ error: 'As senhas digitadas não coincidem', status: 2 });
+                return res.json({ error: 'As senhas digitadas não coincidem', status: 2 });
             }
 
             let response = await User.findOne({
@@ -38,7 +38,7 @@ module.exports = {
             });
 
             if (response) {
-                return res.status(400).json({ error: 'Este email já está sendo utilizado', status: 2 });
+                return res.json({ error: 'Este email já está sendo utilizado', status: 2 });
             }
 
             nickname = nickname.trim();
@@ -51,7 +51,7 @@ module.exports = {
             });
 
             if (response) {
-                return res.status(400).json({ error: 'Este nickname já está sendo utilizado', status: 2 });
+                return res.json({ error: 'Este nickname já está sendo utilizado', status: 2 });
             }
 
             const hashSenha = crypto.createHash('sha256').update(senha).digest('hex');
@@ -69,7 +69,7 @@ module.exports = {
             let user = await User.create(data);
 
             if (!user) {
-                return res.status(400).json({ status: 2, error: 'Houve um erro ao criar o usuário' });
+                return res.json({ status: 2, error: 'Houve um erro ao criar o usuário' });
             }
 
             const tokens = await Auth.directLogin(user.id, user.email, senha, user.nickname, user.tipoUsuario);
@@ -78,7 +78,7 @@ module.exports = {
 
             return res.json({ status: 1, user, tokens });
         } else {
-            return res.status(400).json({ status: 2, error: 'Faltam campos para criar um novo usuário' });
+            return res.json({ status: 2, error: 'Faltam campos para criar um novo usuário' });
         }
 
     },
@@ -88,33 +88,33 @@ module.exports = {
         const { email, senha } = req.body;
 
         if (!email || email.length > 255) {
-            return res.status(400).json({ status: 2, error: "O campo 'email' está incorreto" });
+            return res.json({ status: 2, error: "O campo 'email' está incorreto" });
         }
 
         if (!senha || senha.length > 20) {
-            return res.status(400).json({ status: 2, error: "Falta o campo 'senha'" });
+            return res.json({ status: 2, error: "Falta o campo 'senha'" });
         }
 
         if (email !== req.user.email || senha !== req.user.senha) {
-            return res.status(400).json({ status: 2, error: 'Houve um conflito de credenciais, informe o email e senha corretos para deletar o usuário' });
+            return res.json({ status: 2, error: 'Houve um conflito de credenciais, informe o email e senha corretos para deletar o usuário' });
         }
 
         let user = await User.findOne({ where: { id: req.user.id } });
 
         if (!user) {
-            return res.status(400).json({ status: 2, error: 'Houve um problema ao retornar o usuário, provavelmente já foi deletado', user });
+            return res.json({ status: 2, error: 'Houve um problema ao retornar o usuário, provavelmente já foi deletado', user });
         }
 
         response = await user.update({ loginToken: "" });
 
         if (!response) {
-            return res.status(400).json({ status: 2, error: 'Não foi possível sair da conta' });
+            return res.json({ status: 2, error: 'Não foi possível sair da conta' });
         }
 
         const final = await user.destroy();
 
         if (!final) {
-            return res.status(400).json({ status: 2, error: 'Houve um problema ao apagar o usuário, provavelmente já foi deletado', request });
+            return res.json({ status: 2, error: 'Houve um problema ao apagar o usuário, provavelmente já foi deletado', request });
         }
 
         return res.json({ status: 1 });
@@ -135,13 +135,13 @@ module.exports = {
         });
 
         if (!user) {
-            return res.status(400).json({ status: 2, error: 'Usuário não encontrado' });
+            return res.json({ status: 2, error: 'Usuário não encontrado' });
         }
 
         if (nickname && nickname != "" && nickname != " ") {
 
             if (nickname.length > 50) {
-                return res.status(400).json({ status: 2, error: "O nickname é grande demais" });
+                return res.json({ status: 2, error: "O nickname é grande demais" });
             }
 
             nickname = nickname.trim();
@@ -153,13 +153,13 @@ module.exports = {
             });
 
             if (response) {
-                return res.status(400).json({ status: 2, error: 'Este nickname já está sendo usado' });
+                return res.json({ status: 2, error: 'Este nickname já está sendo usado' });
             }
 
             response = await user.update({ nickname: nickname });
 
             if (!response) {
-                return res.status(400).json({ status: 2, error: 'Houve um erro ao mudar o nickname' });
+                return res.json({ status: 2, error: 'Houve um erro ao mudar o nickname' });
             }
         }
 
@@ -167,7 +167,7 @@ module.exports = {
 
         if (descricaoPerfil && avatar) {
             if (descricaoPerfil.length > 255) {
-                return res.status(400).json({ status: 2, error: "A descrição é grande demais" });
+                return res.json({ status: 2, error: "A descrição é grande demais" });
             }
 
             avatar = Number(avatar);
@@ -175,7 +175,7 @@ module.exports = {
             change = await user.update({ descricaoPerfil, avatar });
 
             if (!change) {
-                return res.status(400).json({ status: 2, error: 'Houve um erro ao mudar o nickname' });
+                return res.json({ status: 2, error: 'Houve um erro ao mudar o nickname' });
             }
 
         } else if (!descricaoPerfil && avatar) {
@@ -184,18 +184,18 @@ module.exports = {
             change = await user.update({ avatar });
 
             if (!change) {
-                return res.status(400).json({ status: 2, error: 'Houve um erro ao mudar o nickname' });
+                return res.json({ status: 2, error: 'Houve um erro ao mudar o nickname' });
             }
 
         } else if (descricaoPerfil && !avatar) {
             if (descricaoPerfil.length > 255) {
-                return res.status(400).json({ status: 2, error: "A descrição é grande demais" });
+                return res.json({ status: 2, error: "A descrição é grande demais" });
             }
 
             change = await user.update({ descricaoPerfil });
 
             if (!change) {
-                return res.status(400).json({ status: 2, error: 'Houve um erro ao mudar o nickname' });
+                return res.json({ status: 2, error: 'Houve um erro ao mudar o nickname' });
             }
         }
 
@@ -206,23 +206,23 @@ module.exports = {
         const { senha, confirmaSenha, novaSenha, confirmaNovaSenha } = req.body;
 
         if (!senha || !confirmaSenha || !novaSenha || !confirmaNovaSenha) {
-            return res.status(400).json({ status: 2, error: "Faltam campos para concluir sua requisição" });
+            return res.json({ status: 2, error: "Faltam campos para concluir sua requisição" });
         }
 
         if (senha != confirmaSenha) {
-            return res.status(400).json({ error: 'As senhas digitadas não coincidem', status: 2 });
+            return res.json({ error: 'As senhas digitadas não coincidem', status: 2 });
         }
 
         if (novaSenha.length > 20) {
-            return res.status(400).json({ status: 2, error: "A nova senha é muito grande" });
+            return res.json({ status: 2, error: "A nova senha é muito grande" });
         }
 
         if (novaSenha != confirmaNovaSenha) {
-            return res.status(400).json({ error: 'As novas senhas digitadas não coincidem', status: 2 });
+            return res.json({ error: 'As novas senhas digitadas não coincidem', status: 2 });
         }
 
         if (senha !== req.user.senha) {
-            return res.status(400).json({ status: 2, error: 'Houve um conflito de credenciais, informe a senha correta para mudá-la' });
+            return res.json({ status: 2, error: 'Houve um conflito de credenciais, informe a senha correta para mudá-la' });
         }
 
         let hashSenha = crypto.createHash('sha256').update(senha).digest('hex');
@@ -235,11 +235,11 @@ module.exports = {
         });
 
         if (!response) {
-            return res.status(400).json({ error: 'A senha está incorreta', status: 2 });
+            return res.json({ error: 'A senha está incorreta', status: 2 });
         }
 
         if (novaSenha.length < 8 || novaSenha.length > 32) {
-            return res.status(400).json({ error: 'A nova senha deve ter no mínimo 8 e no máximo 32 dígitos', status: 2 });
+            return res.json({ error: 'A nova senha deve ter no mínimo 8 e no máximo 32 dígitos', status: 2 });
         }
 
         hashSenha = crypto.createHash('sha256').update(novaSenha).digest('hex');
@@ -247,7 +247,7 @@ module.exports = {
         const change = response.update({ senha: hashSenha });
 
         if (!change) {
-            return res.status(400).json({ error: 'Houve um problema para mudar a senha', status: 2 });
+            return res.json({ error: 'Houve um problema para mudar a senha', status: 2 });
         }
 
         const tokens = await Auth.directLogin(response.id, response.email, novaSenha, response.nickname, response.tipoUsuario);
@@ -265,7 +265,7 @@ module.exports = {
         } else if (req.query.id) {
             id = req.query.id;
         } else {
-            return res.status(400).json({ status: 2, error: "Falta o parâmetro de busca para concluir sua requisição" });
+            return res.json({ status: 2, error: "Falta o parâmetro de busca para concluir sua requisição" });
         }
 
         const response = await User.findOne({
@@ -275,7 +275,7 @@ module.exports = {
         });
 
         if (!response) {
-            return res.status(400).json({ status: 2, error: 'Usuário não encontrado' });
+            return res.json({ status: 2, error: 'Usuário não encontrado' });
         }
 
         let user = {
@@ -296,7 +296,7 @@ module.exports = {
         let offSet;
 
         if (!limite || !pagina) {
-            return res.status(400).json({ status: 2, error: "Faltam parâmetros para concluir sua requisição" });
+            return res.json({ status: 2, error: "Faltam parâmetros para concluir sua requisição" });
         }
 
         if (pagina == 1 || pagina == 0) {
@@ -311,7 +311,7 @@ module.exports = {
         });
 
         if (!response) {
-            return res.status(400).json({ status: 2, error: 'Não foi possível achar atividades desse usuário' });
+            return res.json({ status: 2, error: 'Não foi possível achar atividades desse usuário' });
         }
 
         let users = [];
@@ -336,7 +336,7 @@ module.exports = {
         // const max = await User.max('pontuacao');
 
         if (!top) {
-            return res.status(400).json({ status: 2, error: "O parâmetro de 'top' está faltando" });
+            return res.json({ status: 2, error: "O parâmetro de 'top' está faltando" });
         }
 
         const response = await User.findAll({
@@ -346,7 +346,7 @@ module.exports = {
 
 
         if (!response) {
-            return res.status(400).json({ status: 2, error: 'Houve um erro ao recuperar o ranking' });
+            return res.json({ status: 2, error: 'Houve um erro ao recuperar o ranking' });
         }
 
         let usuarios = [];
@@ -374,19 +374,19 @@ module.exports = {
             if (email && senha && confirmaSenha && nickname) {
 
                 if (email.length > 255) {
-                    return res.status(400).json({ error: 'O email é grande demais', status: 2 });
+                    return res.json({ error: 'O email é grande demais', status: 2 });
                 }
 
                 if (nickname.length > 50) {
-                    return res.status(400).json({ status: 2, error: "O nickname é grande demais" });
+                    return res.json({ status: 2, error: "O nickname é grande demais" });
                 }
 
                 if (senha.length < 8 || senha.length > 20) {
-                    return res.status(400).json({ error: 'A senha deve ter no mínimo 8 e no máximo 20 dígitos', status: 2 });
+                    return res.json({ error: 'A senha deve ter no mínimo 8 e no máximo 20 dígitos', status: 2 });
                 }
 
                 if (senha != confirmaSenha) {
-                    return res.status(400).json({ error: 'As senhas digitadas não coincidem', status: 2 });
+                    return res.json({ error: 'As senhas digitadas não coincidem', status: 2 });
                 }
 
                 let response = await User.findOne({
@@ -397,7 +397,7 @@ module.exports = {
                 });
 
                 if (response) {
-                    return res.status(400).json({ error: 'Este email já está sendo utilizado', status: 2 });
+                    return res.json({ error: 'Este email já está sendo utilizado', status: 2 });
                 }
 
                 nickname = nickname.trim();
@@ -410,7 +410,7 @@ module.exports = {
                 });
 
                 if (response) {
-                    return res.status(400).json({ error: 'Este nickname já está sendo utilizado', status: 2 });
+                    return res.json({ error: 'Este nickname já está sendo utilizado', status: 2 });
                 }
 
                 const hashSenha = crypto.createHash('sha256').update(senha).digest('hex');
@@ -428,7 +428,7 @@ module.exports = {
                 let user = await User.create(data);
 
                 if (!user) {
-                    return res.status(400).json({ status: 2, error: 'Houve um erro ao criar o usuário' });
+                    return res.json({ status: 2, error: 'Houve um erro ao criar o usuário' });
                 }
 
                 const tokens = await Auth.directLogin(user.id, user.email, senha, user.nickname, user.tipoUsuario);
@@ -437,10 +437,10 @@ module.exports = {
 
                 return res.json({ status: 1, user, tokens });
             } else {
-                return res.status(400).json({ status: 2, error: 'Faltam campos para criar um novo usuário' });
+                return res.json({ status: 2, error: 'Faltam campos para criar um novo usuário' });
             }
         }else{
-            return res.status(400).json({ status: 2, error: 'Você não tem permissão para criar um administrador' });
+            return res.json({ status: 2, error: 'Você não tem permissão para criar um administrador' });
         }
 
     },

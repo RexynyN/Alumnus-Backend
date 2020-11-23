@@ -8,35 +8,35 @@ module.exports = {
         const { idAtividade, descricao } = req.body;
 
         if (!idAtividade) {
-            return res.status(400).json({ status: 2, error: "Falta o id da atividade" });
+            return res.json({ status: 2, error: "Falta o id da atividade" });
         }
 
         if (!descricao) {
-            return res.status(400).json({ status: 2, error: "Falta a descrição da Meta" });
+            return res.json({ status: 2, error: "Falta a descrição da Meta" });
         }
 
         const atividade = await Atv.findOne({ where: { id: idAtividade, idUsuario: req.user.id } });
 
         if (!atividade) {
-            return res.status(400).json({ status: 2, error: "A atividade não foi encontrada, provavelmente não é deste usuário ou não existe" });
+            return res.json({ status: 2, error: "A atividade não foi encontrada, provavelmente não é deste usuário ou não existe" });
         }
 
         if (atividade.statusAtividade !== 1) {
-            return res.status(400).json({ status: 2, error: "A atividade já foi fechada" });
+            return res.json({ status: 2, error: "A atividade já foi fechada" });
         }
 
         const metas = await Meta.findAll({ where: { idAtividade: idAtividade } });
 
         if (!metas) {
-            return res.status(400).json({ status: 2, error: "Houve um erro ao retornar metas para avaliação" });
+            return res.json({ status: 2, error: "Houve um erro ao retornar metas para avaliação" });
         }
 
         if (metas.length >= 3) {
-            return res.status(400).json({ status: 2, error: "Máximo de metas para essa atividade atingido" });
+            return res.json({ status: 2, error: "Máximo de metas para essa atividade atingido" });
         }
 
         if (descricao.length > 255) {
-            return res.status(400).json({ status: 2, error: "A descricao do usuário deve ter no máximo 255 caracteres" });
+            return res.json({ status: 2, error: "A descricao do usuário deve ter no máximo 255 caracteres" });
         }
 
         let data = {
@@ -49,7 +49,7 @@ module.exports = {
         const meta = await Meta.create(data);
 
         if (!meta) {
-            return res.status(400).json({ status: 2, error: "Houve um erro ao criar a meta" });
+            return res.json({ status: 2, error: "Houve um erro ao criar a meta" });
         }
 
         return res.json({ status: 1, meta });
@@ -60,19 +60,19 @@ module.exports = {
         const idAtividade = req.params.id;
 
         if (!idAtividade) {
-            return res.status(400).json({ status: 2, error: "Falta o parâmetro 'id da atividade'" });
+            return res.json({ status: 2, error: "Falta o parâmetro 'id da atividade'" });
         }
 
         const atividade = await Atv.findOne({ where: { id: idAtividade, idUsuario: req.user.id } });
 
         if (!atividade) {
-            return res.status(400).json({ status: 2, error: "A atividade não foi encontrada, provavelmente não é deste usuário ou não existe" });
+            return res.json({ status: 2, error: "A atividade não foi encontrada, provavelmente não é deste usuário ou não existe" });
         }
 
         const metas = await Meta.findAll({ where: { idAtividade: idAtividade } });
 
         if (!metas) {
-            return res.status(400).json({ status: 2, error: "Houve um erro ao retornar as metas" });
+            return res.json({ status: 2, error: "Houve um erro ao retornar as metas" });
         }
 
         return res.json({ status: 1, metas });
@@ -88,21 +88,21 @@ module.exports = {
         const situacoes = req.body.situacoes;
 
         if (!idAtividade) {
-            return res.status(400).json({ status: 2, error: "Falta o id da atividade" });
+            return res.json({ status: 2, error: "Falta o id da atividade" });
         }
 
         if (!ids) {
-            return res.status(400).json({ status: 2, error: "Faltam os ids das metas" });
+            return res.json({ status: 2, error: "Faltam os ids das metas" });
         }
 
         if (!situacoes) {
-            return res.status(400).json({ status: 2, error: "Faltam as situcoes das metas" });
+            return res.json({ status: 2, error: "Faltam as situcoes das metas" });
         }
 
         const atividade = await Atv.findOne({ where: { id: idAtividade, idUsuario: req.user.id } });
 
         if (!atividade) {
-            return res.status(400).json({ status: 2, error: "A atividade não foi encontrada, provavelmente não é deste usuário ou não existe" });
+            return res.json({ status: 2, error: "A atividade não foi encontrada, provavelmente não é deste usuário ou não existe" });
         }
 
         let somaPontos = 0;
@@ -116,7 +116,7 @@ module.exports = {
                 let find = await Meta.findOne({ where: { id: id, idAtividade: idAtividade } });
 
                 if (!find) {
-                    return res.status(400).json({ status: 2, error: "Não foi possível achar a meta de ID " + id + " para a atividade de ID " + idAtividade });
+                    return res.json({ status: 2, error: "Não foi possível achar a meta de ID " + id + " para a atividade de ID " + idAtividade });
                 }
 
                 if (find.situacaoMeta == 0) {
@@ -139,7 +139,7 @@ module.exports = {
                     let close = await Meta.update(data, { where: { id: id, idAtividade: idAtividade } });
 
                     if (!close) {
-                        return res.status(400).json({ status: 2, error: "Não foi possivel fechar a meta de ID" + id });
+                        return res.json({ status: 2, error: "Não foi possivel fechar a meta de ID" + id });
                     }
 
                     somaPontos += pontos;
@@ -153,14 +153,14 @@ module.exports = {
             });
 
             if (!change) {
-                return res.status(400).json({ status: 2, error: 'Houve um erro ao atribuir os pontos à atividade' });
+                return res.json({ status: 2, error: 'Houve um erro ao atribuir os pontos à atividade' });
             }
 
 
             const user = await User.findOne({ where: { id: req.user.id, } });
 
             if (!user) {
-                return res.status(400).json({ status: 2, error: 'Houve um erro ao buscar o usuário para atribuir os pontos' });
+                return res.json({ status: 2, error: 'Houve um erro ao buscar o usuário para atribuir os pontos' });
             }
 
             const points = await user.update({
@@ -174,7 +174,7 @@ module.exports = {
             );
 
             if (!points) {
-                return res.status(400).json({ status: 2, error: 'Houve um erro ao atribuir os pontos.' });
+                return res.json({ status: 2, error: 'Houve um erro ao atribuir os pontos.' });
             }
         }
 

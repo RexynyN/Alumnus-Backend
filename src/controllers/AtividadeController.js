@@ -8,7 +8,7 @@ module.exports = {
         const pagina = req.query.page;
 
         if (!limite || !pagina) {
-            return res.status(400).json({ status: 2, error: 'Parâmetros de URL inválidos' });
+            return res.json({ status: 2, error: 'Parâmetros de URL inválidos' });
         }
 
         let offSet;
@@ -29,7 +29,7 @@ module.exports = {
         });
 
         if (!activities) {
-            return res.status(400).json({ status: 2, error: 'Não foi possível achar atividades desse usuário' });
+            return res.json({ status: 2, error: 'Não foi possível achar atividades desse usuário' });
         }
 
         return res.json({ status: 1, activities });
@@ -39,14 +39,14 @@ module.exports = {
         const { dataInicio, dataFinal } = req.body;
 
         if (!dataInicio || !dataFinal) {
-            return res.status(400).json({ status: 2, error: 'Faltam campos para retornar a agenda' });
+            return res.json({ status: 2, error: 'Faltam campos para retornar a agenda' });
         }
 
         let startDate = new Date(dataInicio);
         let endDate = new Date(dataFinal);
 
         if(dataInicio > dataFinal) {
-            return res.status(400).json({ status: 2, error: 'As datas estão fora de ordem cronológica' });
+            return res.json({ status: 2, error: 'As datas estão fora de ordem cronológica' });
         }
 
         const atividades = await Atv.findAll({
@@ -60,7 +60,7 @@ module.exports = {
         });
 
         if (!atividades) {
-            return res.status(400).json({ status: 2, error: 'Houve um erro ao recuperar sua agenda' });
+            return res.json({ status: 2, error: 'Houve um erro ao recuperar sua agenda' });
         }
 
         return res.json({ status: 1, atividades })
@@ -77,7 +77,7 @@ module.exports = {
         } = req.body;
 
         if (!agrupador || !titulo || !descricao || !tempoConclusao || !dataAtividade) {
-            return res.status(400).json({ status: 2, error: 'Faltam campos para criar uma atividade' });
+            return res.json({ status: 2, error: 'Faltam campos para criar uma atividade' });
         }
 
         let today = new Date();
@@ -88,11 +88,11 @@ module.exports = {
         endDate.setMinutes(endDate.getMinutes() + Number(hourMin[1]));
 
         if (startDate <= today) {
-            return res.status(400).json({ status: 2, error: 'A data da atividade já passou' });
+            return res.json({ status: 2, error: 'A data da atividade já passou' });
         }
 
         if (tempoConclusao === "00:00") {
-            return res.status(400).json({ status: 2, error: 'O tempo de conclusão é inválido' });
+            return res.json({ status: 2, error: 'O tempo de conclusão é inválido' });
         }
 
         const response = await Atv.findOne({
@@ -107,7 +107,7 @@ module.exports = {
         console.log(response)
 
         if (response) {
-            return res.status(400).json({ status: 2, error: 'Já existe uma atividade neste data/horário' });
+            return res.json({ status: 2, error: 'Já existe uma atividade neste data/horário' });
         }
 
         let data = {
@@ -127,7 +127,7 @@ module.exports = {
         const atv = await Atv.create(data);
 
         if (!atv) {
-            return res.status(400).json({ status: 2, error: 'Houve um erro ao criar a atividade' });
+            return res.json({ status: 2, error: 'Houve um erro ao criar a atividade' });
         }
 
         return res.json({ status: 1, atv });
@@ -142,12 +142,12 @@ module.exports = {
             anotacao,
         } = req.body;
 
-        if (!id || !tempoCumprido) {
-            return res.status(400).json({ status: 2, error: 'Falta o ID da atividade' });
+        if (!id) {
+            return res.json({ status: 2, error: 'Falta o ID da atividade' });
         }
 
         if (!tempoCumprido) {
-            return res.status(400).json({ status: 2, error: 'Falta o tempo cumprido da atividade ' });
+            return res.json({ status: 2, error: 'Falta o tempo cumprido da atividade ' });
         }
 
         const response = await Atv.findOne({
@@ -158,7 +158,7 @@ module.exports = {
         });
 
         if (!response) {
-            return res.status(400).json({ status: 2, error: 'Atividade não encontrada: Provavelmente não pertence a esse usuário ou não existe.' });
+            return res.json({ status: 2, error: 'Atividade não encontrada: Provavelmente não pertence a esse usuário ou não existe.' });
         }
 
         const user = await User.findOne({
@@ -168,11 +168,11 @@ module.exports = {
         });
 
         if (!user) {
-            return res.status(400).json({ status: 2, error: 'Houve um erro ao recuperar o usuário' });
+            return res.json({ status: 2, error: 'Houve um erro ao recuperar o usuário' });
         }
 
         if (response.statusAtividade !== 1) {
-            return res.status(400).json({ status: 2, error: 'Atividade já foi terminada' });
+            return res.json({ status: 2, error: 'Atividade já foi terminada' });
         }
 
         let previsto = new Date(response.dataAtividade);
@@ -206,7 +206,7 @@ module.exports = {
         });
 
         if (!change) {
-            return res.status(400).json({ status: 2, error: 'Houve um erro ao fechar a atividade.' });
+            return res.json({ status: 2, error: 'Houve um erro ao fechar a atividade.' });
         }
 
         const points = await User.update({
@@ -219,7 +219,68 @@ module.exports = {
             });
 
         if (!points) {
-            return res.status(400).json({ status: 2, error: 'Houve um erro ao atribuir os pontos.' });
+            return res.json({ status: 2, error: 'Houve um erro ao atribuir os pontos.' });
+        }
+
+        return res.json({ status: 1 });
+    },
+
+    async cancelActivity(req, res) {
+        const {
+            id,
+        } = req.body;
+
+        if (!id) {
+            return res.json({ status: 2, error: 'Falta o ID da atividade' });
+        }
+
+        const response = await Atv.findOne({
+            where: {
+                id: id,
+                idUsuario: req.user.id
+            }
+        });
+
+        if (!response) {
+            return res.json({ status: 2, error: 'Atividade não encontrada: Provavelmente não pertence a esse usuário ou não existe.' });
+        }
+
+        const user = await User.findOne({
+            where: {
+                id: req.user.id
+            }
+        });
+
+        if (!user) {
+            return res.json({ status: 2, error: 'Houve um erro ao recuperar o usuário' });
+        }
+
+        if (response.statusAtividade !== 1) {
+            return res.json({ status: 2, error: 'Atividade já foi terminada' });
+        }
+
+        let pontos = -3;
+
+        const change = await response.update({
+            statusAtividade: 2,
+            pontos: pontos,
+        });
+
+        if (!change) {
+            return res.json({ status: 2, error: 'Houve um erro ao cancelar a atividade.' });
+        }
+
+        const points = await User.update({
+            pontuacao: (user.pontuacao + pontos)
+        },
+            {
+                where: {
+                    id: req.user.id,
+                }
+            });
+
+        if (!points) {
+            return res.json({ status: 2, error: 'Houve um erro ao atribuir os pontos.' });
         }
 
         return res.json({ status: 1 });
@@ -230,7 +291,7 @@ module.exports = {
         const ActivityId = req.params.id;
 
         if (!ActivityId) {
-            return res.status(400).json({ status: 2, error: 'O ID da atividade é necessário' });
+            return res.json({ status: 2, error: 'O ID da atividade é necessário' });
         }
 
 
@@ -242,11 +303,11 @@ module.exports = {
         });
 
         if (!atv) {
-            return res.status(400).json({ status: 2, error: 'Atividade não encontrada: Provavelmente não pertence a esse usuário ou não existe.' });
+            return res.json({ status: 2, error: 'Atividade não encontrada: Provavelmente não pertence a esse usuário ou não existe.' });
         }
 
         if (atv.statusAtividade !== 1) {
-            return res.status(400).json({ status: 2, error: 'A atividade não pode ser deletada, pois já foi terminada' });
+            return res.json({ status: 2, error: 'A atividade não pode ser deletada, pois já foi terminada' });
         }
 
 
@@ -258,11 +319,11 @@ module.exports = {
         });
 
         if (!response) {
-            return res.status(400).json({ status: 2, error: 'Atividade não encontrada' });
+            return res.json({ status: 2, error: 'Atividade não encontrada' });
         }
 
         if (response.tempoCumprido !== "00:00:00" || response.status !== 1) {
-            return res.status(400).json({ status: 2, error: 'Atividade não pode ser deletada pois já foi iniciada' });
+            return res.json({ status: 2, error: 'Atividade não pode ser deletada pois já foi iniciada' });
         }
 
         return res.json({ status: 1, response });
@@ -289,11 +350,11 @@ module.exports = {
 
 
         if (!response) {
-            return res.status(400).json({ status: 2, error: 'Atividade não encontrada: Provavelmente não pertence a esse usuário ou não existe.' });
+            return res.json({ status: 2, error: 'Atividade não encontrada: Provavelmente não pertence a esse usuário ou não existe.' });
         }
 
         if (response.statusAtividade !== 1) {
-            return res.status(400).json({ status: 2, error: 'Atividade já foi terminada' });
+            return res.json({ status: 2, error: 'Atividade já foi terminada' });
         }
 
         let data;
@@ -332,7 +393,7 @@ module.exports = {
         } = req.body;
 
         if (!id || !tempoCumprido || !numeroMetas || !anotacao) {
-            return res.status(400).json({ status: 2, error: 'Faltam campos para atualizar a atividade' });
+            return res.json({ status: 2, error: 'Faltam campos para atualizar a atividade' });
         }
 
         const response = await Atv.findOne({
@@ -344,7 +405,7 @@ module.exports = {
 
 
         if (!response) {
-            return res.status(400).json({ status: 2, error: 'Atividade não encontrada: Provavelmente não pertence a esse usuário ou não existe.' });
+            return res.json({ status: 2, error: 'Atividade não encontrada: Provavelmente não pertence a esse usuário ou não existe.' });
         }
 
         if (response.status != 2) {
@@ -358,13 +419,13 @@ module.exports = {
             const update = Atv.update(data, { where: { id: ActivityId } });
 
             if (!update) {
-                return res.status(400).json({ status: 2, error: 'Não foi possível atualizar a atividade' });
+                return res.json({ status: 2, error: 'Não foi possível atualizar a atividade' });
             }
 
             return res.json({ status: 1, update });
 
         } else {
-            return res.status(400).json({ status: 2, error: 'A atividade já foi fechada, não pode ser editada' });
+            return res.json({ status: 2, error: 'A atividade já foi fechada, não pode ser editada' });
         }
     },
 
@@ -373,7 +434,7 @@ module.exports = {
         const ActivityId = req.params.id;
 
         if (!ActivityId) {
-            return res.status(400).json({ status: 2, error: 'O ID da atividade é necessário' });
+            return res.json({ status: 2, error: 'O ID da atividade é necessário' });
         }
 
         const response = await Atv.findOne({
@@ -384,7 +445,7 @@ module.exports = {
         });
 
         if (!response) {
-            return res.status(400).json({ status: 2, error: 'Atividade não encontrada: Provavelmente não pertence a esse usuário ou não existe.' });
+            return res.json({ status: 2, error: 'Atividade não encontrada: Provavelmente não pertence a esse usuário ou não existe.' });
         }
 
         return res.json({ status: 1, response });

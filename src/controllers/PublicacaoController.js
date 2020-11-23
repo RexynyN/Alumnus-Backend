@@ -7,7 +7,7 @@ module.exports = {
         const pagina = req.query.page;
 
         if (!limite || !pagina) {
-            return res.status(400).json({ status: 2, error: 'Parâmetros de URL inválidos' });
+            return res.json({ status: 2, error: 'Parâmetros de URL inválidos' });
         }
 
         let offSet;
@@ -26,7 +26,7 @@ module.exports = {
         });
 
         if (!pubs) {
-            return res.status(400).json({ status: 2, error: 'Não foi possível achar atividades desse usuário' });
+            return res.json({ status: 2, error: 'Não foi possível achar atividades desse usuário' });
         }
 
         return res.json({ status: 1, pubs });
@@ -40,7 +40,7 @@ module.exports = {
         } = req.body;
 
         if (!titulo || !conteudo) {
-            return res.status(400).json({ status: 2, error: 'A publicação não foi criada, faltam campos ou os campos não atendem aos critérios' });
+            return res.json({ status: 2, error: 'A publicação não foi criada, faltam campos ou os campos não atendem aos critérios' });
         }
 
         let data = {
@@ -53,7 +53,7 @@ module.exports = {
         const pub = await Pub.create(data);
 
         if (!pub) {
-            return res.status(400).json({ status: 2, error: 'Houve um erro ao criar a atividade' });
+            return res.json({ status: 2, error: 'Houve um erro ao criar a atividade' });
         }
 
         return res.json({ status: 1, pub });
@@ -64,7 +64,7 @@ module.exports = {
         const pubId = req.params.id;
 
         if (!pubId) {
-            return res.status(400).json({ status: 2, error: 'O ID da publicação é necessário' });
+            return res.json({ status: 2, error: 'O ID da publicação é necessário' });
         }
 
         const pub = await Pub.findOne({
@@ -75,7 +75,7 @@ module.exports = {
         });
 
         if (!pub) {
-            return res.status(400).json({ status: 2, error: 'Publicação não encontrada: Provavelmente não pertence a esse usuário ou não existe.' });
+            return res.json({ status: 2, error: 'Publicação não encontrada: Provavelmente não pertence a esse usuário ou não existe.' });
         }
 
         const response = await Pub.destroy({
@@ -86,7 +86,7 @@ module.exports = {
         });
 
         if (!response) {
-            return res.status(400).json({ status: 2, error: 'Publicação não encontrada' });
+            return res.json({ status: 2, error: 'Publicação não encontrada' });
         }
 
         return res.json({ status: 1, response });
@@ -102,11 +102,11 @@ module.exports = {
 
 
         if (!id || !titulo || !conteudo) {
-            return res.status(400).json({ status: 2, error: 'Faltam campos para atualizar a publicação' });
+            return res.json({ status: 2, error: 'Faltam campos para atualizar a publicação' });
         }
 
         if(conteudo.length > 255){
-            return res.status(400).json({ status: 2, error: 'Texto muito longo, máximo de 255' });
+            return res.json({ status: 2, error: 'Texto muito longo, máximo de 255' });
         }
 
         const response = await Pub.findOne({
@@ -118,7 +118,7 @@ module.exports = {
 
 
         if (!response) {
-            return res.status(400).json({ status: 2, error: 'Publicação não encontrada: Provavelmente não pertence a esse usuário ou não existe.' });
+            return res.json({ status: 2, error: 'Publicação não encontrada: Provavelmente não pertence a esse usuário ou não existe.' });
         }
 
         let data;
@@ -145,7 +145,7 @@ module.exports = {
         const change = await Pub.update(data, { where: { id: id } });
 
         if (!change) {
-            return res.status(400).json({ status: 2, error: "Não foi possível editar a publicação" })
+            return res.json({ status: 2, error: "Não foi possível editar a publicação" })
         }
 
         return res.json({ status: 1, change });
@@ -156,7 +156,7 @@ module.exports = {
         const pubId = req.params.id;
 
         if (!pubId) {
-            return res.status(400).json({ status: 2, error: 'O ID da publicação é necessário' });
+            return res.json({ status: 2, error: 'O ID da publicação é necessário' });
         }
 
         const pub = await Pub.findOne({
@@ -167,7 +167,7 @@ module.exports = {
         });
 
         if (!pub) {
-            return res.status(400).json({ status: 2, error: 'Publicação não encontrada: Provavelmente não pertence a esse usuário ou não existe.' });
+            return res.json({ status: 2, error: 'Publicação não encontrada: Provavelmente não pertence a esse usuário ou não existe.' });
         }
 
         return res.json({ status: 1, pub });
@@ -177,7 +177,7 @@ module.exports = {
         const pubId = req.params.id;
 
         if (!pubId) {
-            return res.status(400).json({ status: 2, error: 'O ID da publicação é necessário' });
+            return res.json({ status: 2, error: 'O ID da publicação é necessário' });
         }
 
         const pub = await Pub.findOne({
@@ -187,13 +187,13 @@ module.exports = {
         });
 
         if (!pub) {
-            return res.status(400).json({ status: 2, error: 'Publicação não encontrada: Provavelmente não existe.' });
+            return res.json({ status: 2, error: 'Publicação não encontrada: Provavelmente não existe.' });
         }
 
         let likes = await pub.update({ apreciacoes: (pub.apreciacoes + 1) });
 
         if (!likes) {
-            return res.status(400).json({ status: 2, error: 'Apreciação não registrada' });
+            return res.json({ status: 2, error: 'Apreciação não registrada' });
         }
 
         likes = likes.apreciacoes;
@@ -205,7 +205,7 @@ module.exports = {
         const pubId = req.params.id;
 
         if (!pubId) {
-            return res.status(400).json({ status: 2, error: 'O ID da publicação é necessário' });
+            return res.json({ status: 2, error: 'O ID da publicação é necessário' });
         }
 
         const pub = await Pub.findOne({
@@ -215,13 +215,13 @@ module.exports = {
         });
 
         if (!pub) {
-            return res.status(400).json({ status: 2, error: 'Publicação não encontrada: Provavelmente não existe.' });
+            return res.json({ status: 2, error: 'Publicação não encontrada: Provavelmente não existe.' });
         }
 
         let likes = await pub.update({ apreciacoes: (pub.apreciacoes - 1) });
 
         if (!likes) {
-            return res.status(400).json({ status: 2, error: 'Não foi possível retirar a apreciação' });
+            return res.json({ status: 2, error: 'Não foi possível retirar a apreciação' });
         }
 
         likes = likes.apreciacoes;

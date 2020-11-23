@@ -37,6 +37,7 @@ routes.get('/user/ranking/', UsuarioController.ranking);
 //Atividade
 routes.post('/activity/create', Auth.validate, AtividadeController.create);
 routes.post('/activity/close/', Auth.validate, AtividadeController.closeActivity);
+routes.post('/activity/cancel/', Auth.validate, AtividadeController.cancelActivity);
 routes.post('/activity/edit/', Auth.validate, AtividadeController.edit);
 routes.post('/activity/delete/:id', Auth.validate, AtividadeController.delete);
 routes.get('/activity/show/:id', Auth.validate, AtividadeController.show);

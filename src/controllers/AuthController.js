@@ -14,7 +14,7 @@ module.exports = {
         const user = await User.findOne({ where: { email, senha: hashSenha } });
 
         if (!user) {
-            return res.status(400).json({ status: 2, error: 'Email ou senha estão incorretos'});
+            return res.json({ status: 2, error: 'Email ou senha estão incorretos'});
         }
 
         let userData = {
@@ -31,7 +31,7 @@ module.exports = {
         const response = await User.update({ loginToken: refreshToken }, { where: { id: user.id } });
 
         if (!response) {
-            return res.status(400).json({ status: 2, error: 'Houve um erro ao fazer login' });
+            return res.json({ status: 2, error: 'Houve um erro ao fazer login' });
         }
 
         return res.json({ status: 1, tipoUsuario: user.tipoUsuario, accessToken: acessToken, refreshToken: refreshToken });
@@ -65,7 +65,7 @@ module.exports = {
         const response = await User.update({ loginToken: "" }, { where: { loginToken: refreshToken } });
 
         if (!response) {
-            return res.status(400).json({ status: 2, error: 'Não foi possível sair da conta' });
+            return res.json({ status: 2, error: 'Não foi possível sair da conta' });
         }
 
         res.json({ status: 1, message: 'O logout foi bem sucedido' });
@@ -78,10 +78,10 @@ module.exports = {
 
         const user = await User.findOne({ where: { loginToken: refreshToken } });
 
-        if (!user) return res.status(400).json({ status: 2, error: 'O token não é valido' });
+        if (!user) return res.json({ status: 2, error: 'O token não é valido' });
 
         jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET, (err, user) => {
-            if (err) return res.status(400).json({ status: 2, error: 'O token não é valido' });
+            if (err) return res.json({ status: 2, error: 'O token não é valido' });
             
             let userData = {
                 email: user.email,
