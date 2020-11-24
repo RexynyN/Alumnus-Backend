@@ -39,8 +39,7 @@ module.exports = {
             query = {
                 where:
                 {
-                    idUsuario: req.user.id,
-
+                    [Op.and]: [{ idUsuario: req.user.id }, { statusAtividade: 1 }],
                 },
                 order: [
                     ['dataAtividade', 'ASC']
