@@ -6,6 +6,7 @@ module.exports = {
     async index(req, res) {
         const limite = req.query.limit;
         const pagina = req.query.page;
+        const history = req.query.history;
 
         if (!limite || !pagina) {
             return res.json({ status: 2, error: 'Parâmetros de URL inválidos' });
@@ -19,14 +20,37 @@ module.exports = {
             offSet = (pagina - 1) * limite;
         }
 
-        const activities = await Atv.findAll({
-            where:
-            {
-                idUsuario: req.user.id
-            },
-            offset: offSet,
-            limit: limite
-        });
+        let query = '';
+        if (history === true || history === "true") {
+
+            query = {
+                where:
+                {
+                    [Op.and]: [{ idUsuario: req.user.id }, { statusAtividade: 2 }],
+
+                },
+                order: [
+                    ['dataAtividade', 'ASC']
+                ],
+                offset: offSet,
+                limit: limite,
+            }
+        } else {
+            query = {
+                where:
+                {
+                    idUsuario: req.user.id,
+
+                },
+                order: [
+                    ['dataAtividade', 'ASC']
+                ],
+                offset: offSet,
+                limit: limite,
+            }
+        }
+
+        const activities = await Atv.findAll(query);
 
         if (!activities) {
             return res.json({ status: 2, error: 'Não foi possível achar atividades desse usuário' });
@@ -35,7 +59,7 @@ module.exports = {
         return res.json({ status: 1, activities });
     },
 
-    async agenda (req, res){
+    async agenda(req, res) {
         const { dataInicio, dataFinal } = req.body;
 
         if (!dataInicio || !dataFinal) {
@@ -45,7 +69,7 @@ module.exports = {
         let startDate = new Date(dataInicio);
         let endDate = new Date(dataFinal);
 
-        if(dataInicio > dataFinal) {
+        if (dataInicio > dataFinal) {
             return res.json({ status: 2, error: 'As datas estão fora de ordem cronológica' });
         }
 
@@ -191,15 +215,15 @@ module.exports = {
 
         let pontos = razao / 30000;
 
-        if(pontos > 30){
+        if (pontos > 30) {
             pontos = 30
-        }else if(pontos < -30){
+        } else if (pontos < -30) {
             pontos = -30;
         }
 
         const change = await response.update({
             statusAtividade: 2,
-            pontos: pontos,
+            pontos: (response.pontos + pontos),
             numeroMetas,
             anotacao,
             tempoCumprido
@@ -263,7 +287,7 @@ module.exports = {
 
         const change = await response.update({
             statusAtividade: 2,
-            pontos: pontos,
+            pontos: (response.pontos + pontos),
         });
 
         if (!change) {
@@ -285,7 +309,7 @@ module.exports = {
 
         return res.json({ status: 1 });
     },
- 
+
     //Deleta uma atividade
     async delete(req, res) {
         const ActivityId = req.params.id;
@@ -310,7 +334,7 @@ module.exports = {
             return res.json({ status: 2, error: 'A atividade não pode ser deletada, pois já foi terminada' });
         }
 
-        
+
         if (atv.tempoCumprido !== "00:00:00" || atv.statusAtividade !== 1) {
             return res.json({ status: 2, error: 'Atividade não pode ser deletada pois já foi iniciada' });
         }
