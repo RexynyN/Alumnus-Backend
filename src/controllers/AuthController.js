@@ -101,10 +101,10 @@ module.exports = {
         const authHeader = req.headers['authorization'];
         const token = authHeader && authHeader.split(' ')[1];
 
-        if (!token) return res.status(401).json({ status: 3, error: 'Nenhum token foi enviado' });
+        if (!token) return res.json({ status: 3, error: 'Nenhum token foi enviado' });
 
         jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, user) => {
-            if (err) return res.status(403).json({ status: 3, error: 'O token enviado é inválido ou expirou' });
+            if (err) return res.json({ status: 3, error: 'O token enviado é inválido ou expirou' });
             req.user = user;
             next();
         });
