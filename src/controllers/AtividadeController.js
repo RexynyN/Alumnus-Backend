@@ -310,6 +310,11 @@ module.exports = {
             return res.json({ status: 2, error: 'A atividade não pode ser deletada, pois já foi terminada' });
         }
 
+        
+        if (atv.tempoCumprido !== "00:00:00" || atv.statusAtividade !== 1) {
+            return res.json({ status: 2, error: 'Atividade não pode ser deletada pois já foi iniciada' });
+        }
+
 
         const response = await Atv.destroy({
             where: {
@@ -320,10 +325,6 @@ module.exports = {
 
         if (!response) {
             return res.json({ status: 2, error: 'Atividade não encontrada' });
-        }
-
-        if (response.tempoCumprido !== "00:00:00" || response.status !== 1) {
-            return res.json({ status: 2, error: 'Atividade não pode ser deletada pois já foi iniciada' });
         }
 
         return res.json({ status: 1, response });
