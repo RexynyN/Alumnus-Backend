@@ -156,9 +156,9 @@ module.exports = {
                 return res.json({ status: 2, error: 'Este nickname já está sendo usado' });
             }
 
-            response = await user.update({ nickname: nickname });
+            const up = await User.update({ nickname: nickname }, { where : { id: req.user.id,}});
 
-            if (!response) {
+            if (!up) {
                 return res.json({ status: 2, error: 'Houve um erro ao mudar o nickname' });
             }
         }
@@ -172,7 +172,7 @@ module.exports = {
 
             avatar = Number(avatar);
 
-            change = await user.update({ descricaoPerfil, avatar });
+            change = await User.update({ descricaoPerfil, avatar }, { where : { id: req.user.id,}});
 
             if (!change) {
                 return res.json({ status: 2, error: 'Houve um erro ao mudar o nickname' });
@@ -181,7 +181,7 @@ module.exports = {
         } else if (!descricaoPerfil && avatar) {
             avatar = Number(avatar);
 
-            change = await user.update({ avatar });
+            change = await User.update({ avatar }, { where : { id: req.user.id,}});
 
             if (!change) {
                 return res.json({ status: 2, error: 'Houve um erro ao mudar o nickname' });
@@ -192,7 +192,7 @@ module.exports = {
                 return res.json({ status: 2, error: "A descrição é grande demais" });
             }
 
-            change = await user.update({ descricaoPerfil });
+            change = await User.update({ descricaoPerfil }, { where : { id: req.user.id,}});
 
             if (!change) {
                 return res.json({ status: 2, error: 'Houve um erro ao mudar o nickname' });
