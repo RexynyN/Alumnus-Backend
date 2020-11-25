@@ -250,6 +250,7 @@ module.exports = {
     async cancelActivity(req, res) {
         const {
             id,
+            anotacao
         } = req.body;
 
         if (!id) {
@@ -286,6 +287,7 @@ module.exports = {
         const change = await response.update({
             statusAtividade: 2,
             pontos: (response.pontos + pontos),
+            anotacao
         });
 
         if (!change) {
