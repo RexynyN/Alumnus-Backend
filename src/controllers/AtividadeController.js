@@ -104,6 +104,7 @@ module.exports = {
         }
 
         let today = new Date();
+        today.setHours(today.getHours() - 3);
         let startDate = new Date(dataAtividade);
         let endDate = new Date(dataAtividade);
         let hourMin = tempoConclusao.split(":");
@@ -126,8 +127,6 @@ module.exports = {
                 idUsuario: req.user.id,
             }
         });
-
-        console.log(response)
 
         if (response) {
             return res.json({ status: 2, error: 'Já existe uma atividade neste data/horário' });

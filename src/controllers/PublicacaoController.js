@@ -1,5 +1,5 @@
 const Pub = require('../models/Publicacao');
-
+const User = require('../models/Usuario');
 
 module.exports = {
     async feed(req, res) {
@@ -19,10 +19,13 @@ module.exports = {
         }
 
         const pubs = await Pub.findAll({
+            include: { 
+                association: 'usuario', 
+                attributes: ['nickname'], 
+              },
             offset: offSet,
             limit: limite,
-            order: [['createdAt', 'DESC']]
-            
+            order: [['createdAt', 'DESC']],
         });
 
         if (!pubs) {
